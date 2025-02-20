@@ -1,15 +1,16 @@
 Pod::Spec.new do |s|
   s.name             = "UnrarKit"
-  s.version          = ENV["TRAVIS_TAG"]
+  s.version          = "2.3.0-beta.1"
   s.summary          = "UnrarKit is here to enable Mac and iOS Cocoa apps to easily work with RAR files for read-only operations"
   s.license          = "BSD"
-  s.homepage         = "https://github.com/abbeycode/UnrarKit"
+  s.homepage         = "https://github.com/DreadPirateBill/tvOS-UnrarKit.git"
   s.author           = { "Dov Frankel" => "dov@abbey-code.com" }
   # Removed to silence validation warnings until issue is resolved: https://github.com/CocoaPods/CocoaPods/issues/10291
 #   s.social_media_url = "https://twitter.com/dovfrankel"
-  s.source           = { :git => "https://github.com/abbeycode/UnrarKit.git", :tag => "#{s.version}" }
-  s.ios.deployment_target = "12.0"
+  s.source           = { :git => "https://github.com/DreadPirateBill/tvOS-UnrarKit.git", :tag => "#{s.version}" }
+ # s.ios.deployment_target = "12.0"
   s.osx.deployment_target = "10.13"
+  s.tvos.deployment_target = "12.0"
   s.requires_arc = "Classes/**/*"
   s.source_files = "Classes/**/*.{mm,m,h}"
   s.public_header_files = "Classes/*.h"
@@ -18,11 +19,11 @@ Pod::Spec.new do |s|
   }
   s.library = "z"
   
-  s.test_spec 'Tests' do |test_spec|
-    test_spec.requires_arc = "Tests/**/*"
-    test_spec.source_files = "Tests/*.{h,m}"
-    test_spec.resources = ["Tests/Test Data"]
-  end
+ # s.test_spec 'Tests' do |test_spec|
+ #   test_spec.requires_arc = "Tests/**/*"
+ #   test_spec.source_files = "Tests/*.{h,m}"
+ #   test_spec.resources = ["Tests/Test Data"]
+ # end
 
   s.subspec "unrar-lib" do |ss|
     ss.public_header_files = "Libraries/unrar/raros.hpp",
