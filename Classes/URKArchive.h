@@ -268,6 +268,26 @@ extern NSString *URKErrorDomain;
  */
 - (nullable instancetype)initWithURL:(NSURL *)fileURL password:(NSString *)password error:(NSError **)error;
 
+/**
+ *  Creates and returns an archive from data in memory
+ *
+ *  @param data     The RAR archive data
+ *  @param error    Contains any error during initialization
+ *
+ *  @return Returns an initialized URKArchive, unless there's a problem with the data
+ */
+- (nullable instancetype)initWithData:(NSData *)data error:(NSError **)error;
+
+/**
+ *  Creates and returns an archive from data in memory, with a given password
+ *
+ *  @param data     The RAR archive data
+ *  @param password The password of the given archive
+ *  @param error    Contains any error during initialization
+ *
+ *  @return Returns an initialized URKArchive, unless there's a problem with the data
+ */
+- (nullable instancetype)initWithData:(NSData *)data password:(NSString *)password error:(NSError **)error;
 
 /**
  *  Determines whether a file is a RAR archive by reading the signature

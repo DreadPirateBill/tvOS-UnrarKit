@@ -15,6 +15,7 @@ RarHppIgnore
 #import "rar.hpp"
 #pragma clang diagnostic pop
 
+#import "dll.hpp"
 
 NSString *URKErrorDomain = @"URKErrorDomain";
 
@@ -53,6 +54,8 @@ NS_DESIGNATED_INITIALIZER
 
 @property (copy) NSString *lastArchivePath;
 @property (copy) NSString *lastFilepath;
+
+@property (strong) NSData *archiveData;
 
 @end
 
@@ -187,6 +190,42 @@ NS_DESIGNATED_INITIALIZER
     return self;
 }
 
+- (instancetype)initWithData:(NSData *)data error:(NSError **)error {
+    return [self initWithData:data password:nil error:error];
+}
+
+- (instancetype)initWithData:(NSData *)data password:(NSString *)password error:(NSError **)error {
+    URKCreateActivity("Init Archive with Data");
+    
+    URKLogInfo("Initializing archive with data of length %lu, password %{public}@", 
+               (unsigned long)data.length, 
+               [password length] != 0 ? @"given" : @"not given");
+    
+    if (!data) {
+        URKLogError("Cannot initialize archive with nil data");
+        return nil;
+    }
+    
+    if ((self = [super init])) {
+        if (error) {
+            *error = nil;
+        }
+        
+        URKLogDebug("Initializing private fields");
+        
+        _archiveData = data;
+        _password = password;
+        _threadLock = [[NSObject alloc] init];
+        
+        _lastArchivePath = nil;
+        _lastFilepath = nil;
+        _ignoreCRCMismatches = NO;
+        _fileBookmark = nil; // Ensure no bookmark for memory archives
+    }
+    
+    return self;
+}
+
 
 #pragma mark - Properties
 
@@ -194,15 +233,20 @@ NS_DESIGNATED_INITIALIZER
 - (NSURL *)fileURL
 {
     URKCreateActivity("Read Archive URL");
+    
+    // Memory-based archives don't have a URL
+    if (self.archiveData) {
+        return nil;
+    }
 
     BOOL bookmarkIsStale = NO;
     NSError *error = nil;
 
     NSURL *result = [NSURL URLByResolvingBookmarkData:self.fileBookmark
-                                              options:0
-                                        relativeToURL:nil
-                                  bookmarkDataIsStale:&bookmarkIsStale
-                                                error:&error];
+                                             options:0
+                                       relativeToURL:nil
+                                 bookmarkDataIsStale:&bookmarkIsStale
+                                             error:&error];
 
     if (error) {
         URKLogFault("Error resolving bookmark to RAR archive: %{public}@", error);
@@ -228,12 +272,15 @@ NS_DESIGNATED_INITIALIZER
 {
     URKCreateActivity("Read Archive Filename");
     
+    if (self.archiveData) {
+        return @"<Memory Archive>";
+    }
+    
     NSURL *url = self.fileURL;
-
     if (!url) {
         return nil;
     }
-
+    
     return url.path;
 }
 
@@ -1261,6 +1308,47 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
     return shouldCancel ? -1 : 0;
 }
 
+int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
+    URKCreateActivity("MemoryCallback");
+    
+    typedef struct {
+        NSData *data;
+        long position;
+    } MemoryStreamContext;
+    
+    MemoryStreamContext *context = (MemoryStreamContext *)UserData;
+    
+    switch(msg) {
+        case UCM_CHANGEVOLUME:
+            URKLogDebug("msg: UCM_CHANGEVOLUME");
+            return -1; // Don't support volume changing for memory archives
+            
+        case UCM_NEEDPASSWORD:
+            URKLogDebug("msg: UCM_NEEDPASSWORD");
+            return 0;
+            
+        case UCM_PROCESSDATA: {
+            URKLogDebug("msg: UCM_PROCESSDATA");
+            
+            if (!context || !context->data) return -1;
+            
+            long bytesLeft = context->data.length - context->position;
+            long bytesToRead = MIN((long)P2, bytesLeft);
+            
+            if (bytesToRead <= 0) return 0;
+            
+            const void *sourcePtr = (const uint8_t *)context->data.bytes + context->position;
+            memcpy((void *)P1, sourcePtr, bytesToRead);
+            context->position += bytesToRead;
+            
+            return (int)bytesToRead;
+        }
+            
+        default:
+            return 0;
+    }
+}
+
 
 
 #pragma mark - Private Methods
@@ -1283,10 +1371,11 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
         URKLogDebug("Opening archive");
         NSError *openFileError = nil;
         
-        if (![self _unrarOpenFile:self.filename
-                           inMode:mode
-                     withPassword:self.password
-                            error:&openFileError]) {
+        NSString *archivePath = self.archiveData ? @"<Memory Archive>" : self.filename;
+        if (![self _unrarOpenFile:archivePath
+                          inMode:mode
+                    withPassword:self.password
+                          error:&openFileError]) {
             URKLogError("Failed to open archive: %{public}@", openFileError);
             
             if (error) {
@@ -1333,18 +1422,41 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
 
     self.header = new RARHeaderDataEx;
     bzero(self.header, sizeof(RARHeaderDataEx));
-	self.flags = new RAROpenArchiveDataEx;
+    self.flags = new RAROpenArchiveDataEx;
     bzero(self.flags, sizeof(RAROpenArchiveDataEx));
 
-    URKLogDebug("Setting archive name...");
-    
-    self.flags->ArcName = strdup(rarFile.UTF8String);
-    self.flags->OpenMode = (uint)mode;
-    self.flags->OpFlags = self.ignoreCRCMismatches ? ROADOF_KEEPBROKEN : 0;
+    if (self.archiveData) {
+        URKLogDebug("Opening archive from memory data...");
+        self.flags->OpenMode = (uint)mode;
+        self.flags->OpFlags = self.ignoreCRCMismatches ? ROADOF_KEEPBROKEN : 0;
+        
+        // For memory archives, we need to provide the data buffer directly
+        self.flags->ArcName = NULL;  // No filename for memory archives
+        self.flags->CmtBuf = NULL;
+        self.flags->CmtBufSize = 0;
+        
+        // Create context for memory stream
+        MemoryStreamContext *context = (MemoryStreamContext *)malloc(sizeof(MemoryStreamContext));
+        context->data = self.archiveData;
+        context->position = 0;
+        
+        // Set up the callback before opening the archive
+        RARSetCallback(NULL, MemoryCallback, (LPARAM)context);
+        
+        self.rarFile = RAROpenArchiveEx(self.flags);
+        
+        if (!self.rarFile) {
+            free(context);
+        }
+    } else {
+        URKLogDebug("Setting archive name...");
+        self.flags->ArcName = strdup(rarFile.UTF8String);
+        self.flags->OpenMode = (uint)mode;
+        self.flags->OpFlags = self.ignoreCRCMismatches ? ROADOF_KEEPBROKEN : 0;
+        
+        self.rarFile = RAROpenArchiveEx(self.flags);
+    }
 
-    URKLogDebug("Opening archive %{public}@...", rarFile);
-    
-    self.rarFile = RAROpenArchiveEx(self.flags);
     if (self.rarFile == 0 || self.flags->OpenResult != 0) {
         NSString *errorName = nil;
         [self assignError:error code:(NSInteger)self.flags->OpenResult errorName:&errorName];
@@ -1360,8 +1472,8 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
         
         char cPassword[2048];
         BOOL utf8ConversionSucceeded = [aPassword getCString:cPassword
-                                                   maxLength:sizeof(cPassword)
-                                                    encoding:NSUTF8StringEncoding];
+                                                  maxLength:sizeof(cPassword)
+                                                   encoding:NSUTF8StringEncoding];
         if (!utf8ConversionSucceeded) {
             NSString *errorName = nil;
             [self assignError:error code:URKErrorCodeStringConversion errorName:&errorName];
@@ -1372,7 +1484,7 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
         RARSetPassword(self.rarFile, cPassword);
     }
 
-	return YES;
+    return YES;
 }
 
 - (BOOL)closeFile
@@ -1380,6 +1492,15 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
     URKCreateActivity("-closeFile");
 
     if (self.rarFile) {
+        // Free memory context if it exists
+        if (self.archiveData) {
+            LPARAM userData;
+            RARGetCallback(self.rarFile, &userData);
+            if (userData) {
+                free((void *)userData);
+            }
+        }
+        
         URKLogDebug("Closing archive %{public}@...", self.filename);
         RARCloseArchive(self.rarFile);
     }
