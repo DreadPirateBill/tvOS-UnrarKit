@@ -34,6 +34,11 @@ typedef enum : NSUInteger {
     URKReadHeaderLoopActionContinueReading,
 } URKReadHeaderLoopAction;
 
+// Add after the URKReadHeaderLoopAction enum definition, before the @interface
+typedef struct {
+    NSData *data;
+    long position;
+} MemoryStreamContext;
 
 @interface URKArchive ()
 
@@ -56,6 +61,8 @@ NS_DESIGNATED_INITIALIZER
 @property (copy) NSString *lastFilepath;
 
 @property (strong) NSData *archiveData;
+
+@property (assign) MemoryStreamContext *memoryContext;
 
 @end
 
@@ -1311,11 +1318,6 @@ int CALLBACK AllowCancellationCallbackProc(UINT msg, long UserData, long P1, lon
 int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
     URKCreateActivity("MemoryCallback");
     
-    typedef struct {
-        NSData *data;
-        long position;
-    } MemoryStreamContext;
-    
     MemoryStreamContext *context = (MemoryStreamContext *)UserData;
     
     switch(msg) {
@@ -1430,23 +1432,14 @@ int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
         self.flags->OpenMode = (uint)mode;
         self.flags->OpFlags = self.ignoreCRCMismatches ? ROADOF_KEEPBROKEN : 0;
         
-        // For memory archives, we need to provide the data buffer directly
-        self.flags->ArcName = NULL;  // No filename for memory archives
-        self.flags->CmtBuf = NULL;
-        self.flags->CmtBufSize = 0;
-        
         // Create context for memory stream
-        MemoryStreamContext *context = (MemoryStreamContext *)malloc(sizeof(MemoryStreamContext));
-        context->data = self.archiveData;
-        context->position = 0;
-        
-        // Set up the callback before opening the archive
-        RARSetCallback(NULL, MemoryCallback, (LPARAM)context);
+        self.memoryContext = (MemoryStreamContext *)malloc(sizeof(MemoryStreamContext));
+        self.memoryContext->data = self.archiveData;
+        self.memoryContext->position = 0;
         
         self.rarFile = RAROpenArchiveEx(self.flags);
-        
-        if (!self.rarFile) {
-            free(context);
+        if (self.rarFile) {
+            RARSetCallback(self.rarFile, MemoryCallback, (LPARAM)self.memoryContext);
         }
     } else {
         URKLogDebug("Setting archive name...");
@@ -1492,13 +1485,9 @@ int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
     URKCreateActivity("-closeFile");
 
     if (self.rarFile) {
-        // Free memory context if it exists
-        if (self.archiveData) {
-            LPARAM userData;
-            RARGetCallback(self.rarFile, &userData);
-            if (userData) {
-                free((void *)userData);
-            }
+        if (self.memoryContext) {
+            free(self.memoryContext);
+            self.memoryContext = NULL;
         }
         
         URKLogDebug("Closing archive %{public}@...", self.filename);
@@ -1769,7 +1758,7 @@ int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
     URKLogDebug("Checking if the file is part of a multi-volume archive...");
     
     if (!volumeURL) {
-        URKLogError("+firstVolumeURL: nil volumeURL passed")
+        URKLogError("+firstVolume: nil volumeURL passed")
     }
     
     NSString *volumePath = volumeURL.path;
