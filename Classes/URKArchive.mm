@@ -1432,13 +1432,34 @@ int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
         self.flags->OpenMode = (uint)mode;
         self.flags->OpFlags = self.ignoreCRCMismatches ? ROADOF_KEEPBROKEN : 0;
         
-        // Create context for memory stream
-        self.memoryContext = (MemoryStreamContext *)malloc(sizeof(MemoryStreamContext));
-        self.memoryContext->data = self.archiveData;
-        self.memoryContext->position = 0;
+        // Set up the archive data buffer
+        self.flags->CmtBuf = NULL;
+        self.flags->CmtBufSize = 0;
         
+        // Create a temporary file to hold the data
+        NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                            [[NSUUID UUID] UUIDString]];
+        
+        if (![self.archiveData writeToFile:tempPath atomically:YES]) {
+            NSString *errorName = nil;
+            [self assignError:error code:ERAR_EOPEN errorName:&errorName];
+            URKLogError("Failed to write archive data to temporary file");
+            return NO;
+        }
+        
+        // Open the temporary file
+        self.flags->ArcName = strdup(tempPath.UTF8String);
         self.rarFile = RAROpenArchiveEx(self.flags);
+        
+        // Delete the temporary file immediately (it will remain available to the process until closed)
+        [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
+        
         if (self.rarFile) {
+            // Create context for memory stream
+            self.memoryContext = (MemoryStreamContext *)malloc(sizeof(MemoryStreamContext));
+            self.memoryContext->data = self.archiveData;
+            self.memoryContext->position = 0;
+            
             RARSetCallback(self.rarFile, MemoryCallback, (LPARAM)self.memoryContext);
         }
     } else {
