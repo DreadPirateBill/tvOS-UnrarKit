@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = "12.0"
   s.requires_arc = "Classes/**/*"
   s.source_files = "Classes/**/*.{mm,m,h}"
-  s.public_header_files = "Classes/*.h"
+  s.public_header_files = "Classes/**/*.h"
   s.resource_bundles = {
       'UnrarKitResources' => ['Resources/**/*']
   }
