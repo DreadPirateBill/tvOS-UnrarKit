@@ -5,26 +5,20 @@ Pod::Spec.new do |s|
   s.license          = "BSD"
   s.homepage         = "https://github.com/DreadPirateBill/tvOS-UnrarKit.git"
   s.author           = { "Dov Frankel" => "dov@abbey-code.com" }
-  # Removed to silence validation warnings until issue is resolved: https://github.com/CocoaPods/CocoaPods/issues/10291
-#   s.social_media_url = "https://twitter.com/dovfrankel"
   s.source           = { :git => "https://github.com/DreadPirateBill/tvOS-UnrarKit.git", :tag => "#{s.version}" }
- # s.ios.deployment_target = "12.0"
   s.osx.deployment_target = "10.13"
   s.tvos.deployment_target = "12.0"
-  s.requires_arc = "Classes/**/*"
+  s.requires_arc = true
+  
+  # Specify the source files and public headers
   s.source_files = "Classes/**/*.{mm,m,h}"
-  s.public_header_files = "Classes/**/*.h"
+  s.public_header_files = "Classes/**/*.h"  # Include all headers in the Classes directory
+  
   s.resource_bundles = {
       'UnrarKitResources' => ['Resources/**/*']
   }
   s.library = "z"
   
- # s.test_spec 'Tests' do |test_spec|
- #   test_spec.requires_arc = "Tests/**/*"
- #   test_spec.source_files = "Tests/*.{h,m}"
- #   test_spec.resources = ["Tests/Test Data"]
- # end
-
   s.subspec "unrar-lib" do |ss|
     ss.public_header_files = "Libraries/unrar/raros.hpp",
                              "Libraries/unrar/dll.hpp"
@@ -78,7 +72,6 @@ Pod::Spec.new do |s|
                       "Libraries/unrar/scantree.cpp",
                       "Libraries/unrar/qopen.cpp",
                       "Libraries/unrar/dll.cpp"
-                      # These files are built implicitly as dependencies
     ss.preserve_paths = "Libraries/unrar/arccmt.cpp",
                         "Libraries/unrar/blake2sp.cpp",
                         "Libraries/unrar/cmdfilter.cpp",
