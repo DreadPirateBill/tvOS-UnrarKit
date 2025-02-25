@@ -12,12 +12,15 @@ Pod::Spec.new do |s|
   
   # Specify the source files and public headers
   s.source_files = "Classes/**/*.{mm,m,h}"
-  s.public_header_files = "Classes/**/*.h"  # Include all headers in the Classes directory
+  s.public_header_files = "Classes/**/*.h", "Libraries/unrar/raros.hpp", "Libraries/unrar/dll.hpp"  # Include all headers in the Classes directory and the new headers
   
   s.resource_bundles = {
       'UnrarKitResources' => ['Resources/**/*']
   }
   s.library = "z"
+  
+  # Add the umbrella header
+  s.header_file = "Classes/UnrarKit.h"  # Specify the umbrella header
   
   s.subspec "unrar-lib" do |ss|
     ss.public_header_files = "Libraries/unrar/raros.hpp",
