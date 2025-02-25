@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   
   # Specify the source files and public headers
   s.source_files = "Classes/**/*.{mm,m,h}"
-  s.public_header_files = "Classes/UnrarKit.h", "Classes/URKArchive.h", "Classes/URKFileInfo.h", "Classes/UnrarKitMacros"
+  s.public_header_files = "Classes/UnrarKit.h", "Classes/URKArchive.h", "Classes/URKFileInfo.h", "Classes/UnrarKitMacros.h"
   
   s.resource_bundles = {
       'UnrarKitResources' => ['Resources/**/*']
