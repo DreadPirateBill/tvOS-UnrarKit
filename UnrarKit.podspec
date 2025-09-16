@@ -20,8 +20,8 @@ Pod::Spec.new do |s|
   s.library = "z"
   
   s.subspec "unrar-lib" do |ss|
-    ss.public_header_files = "Libraries/unrar/raros.hpp",
-                             "Libraries/unrar/dll.hpp"
+    ss.public_header_files = <UnrarKit/raros.hpp>, # "Libraries/unrar/raros.hpp",
+                             <UnrarKit/dll.hpp> # "Libraries/unrar/dll.hpp"
     ss.source_files = "Libraries/unrar/*.hpp",
                       "Libraries/unrar/rar.cpp",
                       "Libraries/unrar/strlist.cpp",
