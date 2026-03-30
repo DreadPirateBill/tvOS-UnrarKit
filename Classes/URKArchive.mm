@@ -197,11 +197,11 @@ NS_DESIGNATED_INITIALIZER
     return self;
 }
 
-- (instancetype)initWithData:(NSData *)data error:(NSError **)error {
+- (instancetype)initWithData:(NSData *)data error:(NSError * __autoreleasing *)error {
     return [self initWithData:data password:nil error:error];
 }
 
-- (instancetype)initWithData:(NSData *)data password:(NSString *)password error:(NSError **)error {
+- (instancetype)initWithData:(NSData *)data password:(NSString *)password error:(NSError * __autoreleasing *)error {
     URKCreateActivity("Init Archive with Data");
     
     URKLogInfo("Initializing archive with data of length %lu, password %{public}@", 
@@ -1474,7 +1474,7 @@ int CALLBACK MemoryCallback(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2) {
     if (self.rarFile == 0 || self.flags->OpenResult != 0) {
         NSString *errorName = nil;
         [self assignError:error code:(NSInteger)self.flags->OpenResult errorName:&errorName];
-        URKLogError("Error opening archive: %{public}@ (%d)", errorName, self.flags->OpenResult);
+        URKLogError("Error opening archive: %{public}@ (%u)", errorName, self.flags->OpenResult);
         return NO;
     }
 

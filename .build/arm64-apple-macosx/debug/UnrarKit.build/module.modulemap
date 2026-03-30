@@ -1,0 +1,4 @@
+module UnrarKit {
+    umbrella header "/Volumes/Macintosh HD - External/Users/bill/Source Code/tvOS-UnrarKit/SPMHeaders/UnrarKit/UnrarKit.h"
+    export *
+}
