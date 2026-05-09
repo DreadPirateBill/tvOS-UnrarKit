@@ -327,6 +327,7 @@ bool RarVM::ExecuteStandardFilter(VM_StandardFilters FilterType)
         }
       }
       break;
+    default: break;
   }
   return true;
 }

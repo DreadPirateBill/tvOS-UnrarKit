@@ -40,7 +40,10 @@ void FileHeader::Reset(size_t SubDataSize)
 FileHeader& FileHeader::operator = (FileHeader &hd)
 {
   SubData.Reset();
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnontrivial-memcall"
   memcpy(this,&hd,sizeof(*this));
+#pragma clang diagnostic pop
   SubData.CleanData();
   SubData=hd.SubData;
   return *this;

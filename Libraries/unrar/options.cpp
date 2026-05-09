@@ -10,13 +10,19 @@ RAROptions::~RAROptions()
 {
   // It is important for security reasons, so we do not have the unnecessary
   // password data left in memory.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnontrivial-memcall"
   memset(this,0,sizeof(RAROptions));
+#pragma clang diagnostic pop
 }
 
 
 void RAROptions::Init()
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnontrivial-memcall"
   memset(this,0,sizeof(RAROptions));
+#pragma clang diagnostic pop
   WinSize=0x2000000;
   Overwrite=OVERWRITE_DEFAULT;
   Method=3;

@@ -44,7 +44,7 @@ void ListArchive(CommandData *Cmd)
             mprintf(L"%s%s", SetCount++ > 0 ? L", ":L"", St(MListSolid));
           if (Arc.SFXSize>0)
             mprintf(L"%s%s", SetCount++ > 0 ? L", ":L"", St(MListSFX));
-          if (Arc.Volume)
+          if (Arc.Volume) {
             if (Arc.Format==RARFMT50)
             {
               // RAR 5.0 archives store the volume number in main header,
@@ -55,6 +55,7 @@ void ListArchive(CommandData *Cmd)
             }
             else
               mprintf(L"%s%s", SetCount++ > 0 ? L", ":L"", St(MListVolume));
+          }
           if (Arc.Protected)
             mprintf(L"%s%s", SetCount++ > 0 ? L", ":L"", St(MListRR));
           if (Arc.Locked)
@@ -108,18 +109,19 @@ void ListArchive(CommandData *Cmd)
                   ListFileHeader(Arc,Arc.SubHead,TitleShown,Verbose,true,false,Cmd->DisableNames);
               }
               break;
+            default: break;
           }
           Arc.SeekToNext();
         }
-        if (!Bare && !Technical)
+        if (!Bare && !Technical) {
           if (TitleShown)
           {
             wchar UnpSizeText[20];
             itoa(TotalUnpSize,UnpSizeText,ASIZE(UnpSizeText));
-        
+
             wchar PackSizeText[20];
             itoa(TotalPackSize,PackSizeText,ASIZE(PackSizeText));
-        
+
             if (Verbose)
             {
               mprintf(L"\n----------- ---------  -------- ----- ---------- -----  --------  ----");
@@ -140,12 +142,13 @@ void ListArchive(CommandData *Cmd)
           }
           else
             mprintf(St(MListNoFiles));
+        }
 
         ArcCount++;
 
 #ifndef NOVOLUME
         if (Cmd->VolSize!=0 && (Arc.FileHead.SplitAfter ||
-            Arc.GetHeaderType()==HEAD_ENDARC && Arc.EndArcHead.NextVolume) &&
+            (Arc.GetHeaderType()==HEAD_ENDARC && Arc.EndArcHead.NextVolume)) &&
             MergeArchive(Arc,NULL,false,Cmd->Command[0]))
           Arc.Seek(0,SEEK_SET);
         else
@@ -276,9 +279,10 @@ void ListFileHeader(Archive &Arc,FileHeader &hd,bool &TitleShown,bool Verbose,bo
             Type=St(MListHardlink); break;
           case FSREDIR_FILECOPY:
             Type=St(MListCopy);     break;
+          default: break;
         }
       mprintf(L"\n%12ls: %ls",St(MListType),Type);
-      if (hd.RedirType!=FSREDIR_NONE)
+      if (hd.RedirType!=FSREDIR_NONE) {
         if (Format==RARFMT15)
         {
           char LinkTargetA[NM];
@@ -300,6 +304,7 @@ void ListFileHeader(Archive &Arc,FileHeader &hd,bool &TitleShown,bool Verbose,bo
         }
         else
           mprintf(L"\n%12ls: %ls",St(MListTarget),hd.RedirName);
+      }
     }
     if (!hd.Dir)
     {

@@ -121,8 +121,8 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     // we ask for next volume also if we have non-aligned encryption block.
     // Since we adjust data size for decryption earlier above,
     // it does not hurt "Keep broken files" mode efficiency.
-    if (UnpVolume && UnpPackedLeft == 0 && 
-        (ReadSize==0 || Decryption && (TotalRead & CRYPT_BLOCK_MASK) != 0) )
+    if (UnpVolume && UnpPackedLeft == 0 &&
+        (ReadSize==0 || (Decryption && (TotalRead & CRYPT_BLOCK_MASK) != 0)) )
     {
 #ifndef NOVOLUME
       if (!MergeArchive(*SrcArc,this,true,CurrentCommand))

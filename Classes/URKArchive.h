@@ -287,7 +287,7 @@ extern NSString *URKErrorDomain;
  *
  *  @return Returns an initialized URKArchive, unless there's a problem with the data
  */
-- (nullable instancetype)initWithData:(NSData *)data password:(nullable NSString *)password error:(NSError **)error;
+- (nullable instancetype)initWithData:(NSData *)data password:(nullable NSString *)password error:(NSError **)error NS_DESIGNATED_INITIALIZER;
 
 /**
  *  Determines whether a file is a RAR archive by reading the signature

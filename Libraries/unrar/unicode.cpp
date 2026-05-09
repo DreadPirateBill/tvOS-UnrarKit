@@ -167,7 +167,7 @@ bool WideToCharMap(const wchar *Src,char *Dest,size_t DestSize,bool &Success)
       }
       SrcPos++;
       memset(&ps,0,sizeof(ps));
-      int Length=mbrlen(Dest+DestPos,MB_CUR_MAX,&ps);
+      int Length=static_cast<int>(mbrlen(Dest+DestPos,MB_CUR_MAX,&ps));
       DestPos+=Max(Length,1);
     }
   }
@@ -219,7 +219,7 @@ void CharToWideMap(const char *Src,wchar *Dest,size_t DestSize,bool &Success)
     else
     {
       memset(&ps,0,sizeof(ps));
-      int Length=mbrlen(Src+SrcPos,MB_CUR_MAX,&ps);
+      int Length=static_cast<int>(mbrlen(Src+SrcPos,MB_CUR_MAX,&ps));
       SrcPos+=Max(Length,1);
       DestPos++;
     }

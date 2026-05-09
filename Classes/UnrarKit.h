@@ -15,6 +15,7 @@ FOUNDATION_EXPORT double UnrarKitVersionNumber;
 FOUNDATION_EXPORT const unsigned char UnrarKitVersionString[];
 
 // Import the necessary headers
+#import <UnrarKit/NSString+UnrarKit.h>
 #import <UnrarKit/URKArchive.h>
 #import <UnrarKit/URKFileInfo.h>
 #import <UnrarKit/raros.hpp>

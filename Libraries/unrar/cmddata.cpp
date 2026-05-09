@@ -808,7 +808,7 @@ void CommandData::ProcessSwitch(const wchar *Switch)
                   AlreadyBad=true;
                   break;
               };
-              if (!AlreadyBad)
+              if (!AlreadyBad) {
                 if (Switch[3]==0)
                   CommentCharset=FilelistCharset=ErrlogCharset=RedirectCharset=rch;
                 else
@@ -829,6 +829,7 @@ void CommandData::ProcessSwitch(const wchar *Switch)
                         AlreadyBad=true;
                         break;
                     }
+              }
               // Set it immediately when parsing the command line, so it also
               // affects messages issued while parsing the command line.
               SetConsoleRedirectCharset(RedirectCharset);
@@ -937,7 +938,7 @@ void CommandData::ProcessCommand()
 #ifndef SFX_MODULE
 
   const wchar *SingleCharCommands=L"FUADPXETK";
-  if (Command[0]!=0 && Command[1]!=0 && wcschr(SingleCharCommands,Command[0])!=NULL || *ArcName==0)
+  if ((Command[0]!=0 && Command[1]!=0 && wcschr(SingleCharCommands,Command[0])!=NULL) || *ArcName==0)
     OutHelp(*Command==0 ? RARX_SUCCESS:RARX_USERERROR); // Return 'success' for 'rar' without parameters.
 
   const wchar *ArcExt=GetExt(ArcName);
@@ -1029,7 +1030,7 @@ bool CommandData::IsSwitch(int Ch)
 uint CommandData::GetExclAttr(const wchar *Str,bool &Dir)
 {
   if (IsDigit(*Str))
-    return wcstol(Str,NULL,0);
+    return static_cast<uint>(wcstol(Str,NULL,0));
 
   uint Attr=0;
   while (*Str!=0)

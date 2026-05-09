@@ -25,11 +25,12 @@ File::File()
 
 File::~File()
 {
-  if (hFile!=FILE_BAD_HANDLE && !SkipClose)
+  if (hFile!=FILE_BAD_HANDLE && !SkipClose) {
     if (NewFile)
       Delete();
     else
       Close();
+  }
 }
 
 
@@ -253,7 +254,7 @@ bool File::Close()
         Success=CloseHandle(hFile)==TRUE;
 #else
 #ifdef FILE_USE_OPEN
-      Success=close(hFile)!=-1;
+      Success=close(static_cast<int>(hFile))!=-1;
 #else
       Success=fclose(hFile)!=EOF;
 #endif
@@ -336,7 +337,7 @@ bool File::Write(const void *Data,size_t Size)
       Success=WriteFile(hFile,Data,(DWORD)Size,&Written,NULL)==TRUE;
 #else
 #ifdef FILE_USE_OPEN
-    ssize_t Written=write(hFile,Data,Size);
+    ssize_t Written=write(static_cast<int>(hFile),Data,Size);
     Success=Written==Size;
 #else
     int Written=fwrite(Data,1,Size,hFile);
@@ -388,7 +389,7 @@ int File::Read(void *Data,size_t Size)
     if (ReadSize==-1)
     {
       ErrorType=FILE_READERROR;
-      if (AllowExceptions)
+      if (AllowExceptions) {
         if (ReadErrorMode==FREM_IGNORE)
         {
           ReadSize=0;
@@ -418,6 +419,7 @@ int File::Read(void *Data,size_t Size)
           }
           ErrHandler.ReadError(FileName);
         }
+      }
     }
     TotalRead+=ReadSize; // If ReadSize is -1, TotalRead is also set to -1 here.
 
@@ -491,7 +493,7 @@ int File::DirectRead(void *Data,size_t Size)
   return Read;
 #else
 #ifdef FILE_USE_OPEN
-  ssize_t ReadSize=read(hFile,Data,Size);
+  ssize_t ReadSize=read(static_cast<int>(hFile),Data,Size);
   if (ReadSize==-1)
     return -1;
   return (int)ReadSize;
@@ -559,7 +561,7 @@ bool File::RawSeek(int64 Offset,int Method)
 #else
   LastWrite=false;
 #ifdef FILE_USE_OPEN
-  if (lseek(hFile,(off_t)Offset,Method)==-1)
+  if (lseek(static_cast<int>(hFile),(off_t)Offset,Method)==-1)
     return false;
 #elif defined(_LARGEFILE_SOURCE) && !defined(_OSF_SOURCE) && !defined(__VMS)
   if (fseeko(hFile,Offset,Method)!=0)
@@ -575,11 +577,12 @@ bool File::RawSeek(int64 Offset,int Method)
 
 int64 File::Tell()
 {
-  if (hFile==FILE_BAD_HANDLE)
+  if (hFile==FILE_BAD_HANDLE) {
     if (AllowExceptions)
       ErrHandler.SeekError(FileName);
     else
       return -1;
+  }
   if (!IsSeekable())
     return CurFilePos;
 #ifdef _WIN_ALL
@@ -593,7 +596,7 @@ int64 File::Tell()
   return INT32TO64(HighDist,LowDist);
 #else
 #ifdef FILE_USE_OPEN
-  return lseek(hFile,0,SEEK_CUR);
+  return lseek(static_cast<int>(hFile),0,SEEK_CUR);
 #elif defined(_LARGEFILE_SOURCE) && !defined(_OSF_SOURCE)
   return ftello(hFile);
 #else

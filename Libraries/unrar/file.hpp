@@ -139,7 +139,7 @@ class File
     int GetFD()
     {
 #ifdef FILE_USE_OPEN
-      return hFile;
+      return static_cast<int>(hFile);
 #else
       return fileno(hFile);
 #endif
