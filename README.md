@@ -1,28 +1,89 @@
-[![Build Status](https://travis-ci.com/abbeycode/UnrarKit.svg?branch=master)](https://travis-ci.com/abbeycode/UnrarKit)
-[![Cocoapods](https://img.shields.io/cocoapods/v/UnrarKit.svg)](https://cocoapods.org/pods/UnrarKit)
+[![Swift Package Manager compatible](https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat)](https://swift.org/package-manager/)
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
-[![Cocoapods platforms](https://img.shields.io/cocoapods/p/UnrarKit.svg)]()
+[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20iOS%20%7C%20tvOS-lightgrey.svg?style=flat)]()
+
+# About this fork
+
+**tvOS-UnrarKit** is a fork of [abbeycode/UnrarKit](https://github.com/abbeycode/UnrarKit) that adds **tvOS** and
+**Swift Package Manager** support. The library's own source was already tvOS-compatible — it simply had no SPM
+manifest, and neither the podspec nor any manifest declared tvOS. This fork supplies both:
+
+* A `Package.swift` manifest, so the library can be consumed with Swift Package Manager.
+* A `SPMHeaders/` tree of symlinks to the public headers, because SPM requires a flat public-header directory and
+  rejects an umbrella header (`UnrarKit.h`) that sits alongside subdirectories such as `Classes/Categories/`.
+* A `tvos.deployment_target` in the podspec.
+
+No functional change is made to UnrarKit or to the bundled UnRAR sources. Everything below is upstream's
+documentation, updated for the added platform and package manager.
 
 # About
 
-UnrarKit is here to enable Mac and iOS apps to easily work with RAR files for read-only operations. It is currently based on version 5.8.1 of the [UnRAR library](http://www.rarlab.com/rar/unrarsrc-5.8.1.tar.gz).
+UnrarKit is here to enable macOS, iOS, and tvOS apps to easily work with RAR files for read-only operations. It is
+currently based on version 6.1.7 of the [UnRAR library](https://www.rarlab.com/rar/unrarsrc-6.1.7.tar.gz).
 
-There is a main project, with unit tests, and a basic iOS example project, which demonstrates how to use the library. To see all of these, open the main workspace file.
+There is a main project, with unit tests, and a basic iOS example project, which demonstrates how to use the
+library. To see all of these, open the main workspace file.
 
-I'm always open to improvements, so please submit your pull requests, or [create issues](https://github.com/abbeycode/UnrarKit/issues) for someone else to implement.
+Improvements to the library itself belong upstream — please submit pull requests or
+[create issues](https://github.com/abbeycode/UnrarKit/issues) there. Issues specific to tvOS or SPM packaging
+belong [here](https://github.com/DreadPirateBill/tvOS-UnrarKit/issues).
 
+
+# Supported platforms
+
+| Platform | Minimum version | Swift Package Manager | CocoaPods | Carthage |
+|----------|-----------------|-----------------------|-----------|----------|
+| macOS    | 10.13           | Yes                   | Yes       | Yes      |
+| iOS      | 12.0            | Yes                   | Yes       | Yes      |
+| tvOS     | 12.0            | Yes                   | Yes       | Yes      |
 
 # Installation
 
-UnrarKit supports both [CocoaPods](https://cocoapods.org/) and [Carthage](https://github.com/Carthage/Carthage). CocoaPods does not support dynamic framework targets (as of v0.39.0), so in that case, please use Carthage.
+UnrarKit supports [Swift Package Manager](https://swift.org/package-manager/),
+[CocoaPods](https://cocoapods.org/) and [Carthage](https://github.com/Carthage/Carthage). CocoaPods does not
+support dynamic framework targets (as of v0.39.0), so in that case, please use Carthage or SPM.
+
+## Swift Package Manager
+
+In Xcode, choose **File → Add Package Dependencies…** and enter the repository URL:
+
+    https://github.com/DreadPirateBill/tvOS-UnrarKit.git
+
+Add the `UnrarKit` library product to any macOS, iOS, or tvOS target.
+
+Or, in a `Package.swift` manifest:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/DreadPirateBill/tvOS-UnrarKit.git", branch: "v2.11"),
+],
+targets: [
+    .target(name: "MyTarget", dependencies: [
+        .product(name: "UnrarKit", package: "tvOS-UnrarKit"),
+    ]),
+]
+```
+
+Two notes on the SPM build, both consequences of packaging an Objective-C/C++ library rather than of any behaviour
+change:
+
+* Public headers are exposed through the flat `SPMHeaders/UnrarKit/` symlink directory. Import the umbrella header
+  as `#import <UnrarKit/UnrarKit.h>`, or `@import UnrarKit;`.
+* The `UnrarKitResources.bundle` of localized error strings is not built by SPM, whose bundle naming does not match
+  what the library looks for at runtime. English error strings are embedded as their own key text, so `NSError`
+  descriptions stay readable; they are simply not localized under SPM.
+
+## Carthage
 
 Cartfile:
 
-    github "abbeycode/UnrarKit"
+    github "DreadPirateBill/tvOS-UnrarKit"
+
+## CocoaPods
 
 Podfile:
 
-    pod "UnrarKit"
+    pod "UnrarKit", :git => "https://github.com/DreadPirateBill/tvOS-UnrarKit.git"
 
 # Example Usage
 
@@ -174,7 +235,7 @@ Full documentation for the project is available on [CocoaDocs](http://cocoadocs.
 
 # Logging
 
-For all OS versions from 2016 onward (macOS 10.12, iOS 10, tvOS 10, watchOS 3), UnzipKit uses the new [Unified Logging framework](https://developer.apple.com/documentation/os/logging) for logging and Activity Tracing. You can view messages at the Info or Debug level to view more details of how UnzipKit is working, and use Activity Tracing to help pinpoint the code path that's causing a particular error.
+For all OS versions from 2016 onward (macOS 10.12, iOS 10, tvOS 10, watchOS 3), UnrarKit uses the new [Unified Logging framework](https://developer.apple.com/documentation/os/logging) for logging and Activity Tracing. You can view messages at the Info or Debug level to view more details of how UnzipKit is working, and use Activity Tracing to help pinpoint the code path that's causing a particular error.
 
 As a fallback, regular `NSLog` is used on older OSes, with all messages logged at the same level.
 
@@ -267,6 +328,23 @@ _Note: if the push to CocoaPods fails in Travis CI, it's almost certainly becaus
 * Dov Frankel (dov@abbey-code.com)
 * Rogerio Pereira Araujo (rogerio.araujo@gmail.com)
 * Vicent Scott (vkan388@gmail.com)
+* tvOS and Swift Package Manager support: William Alexander ([DreadPirateBill](https://github.com/DreadPirateBill))
+
+# License
+
+UnrarKit itself is BSD-licensed — see [LICENSE](LICENSE).
+
+The bundled UnRAR sources in `Libraries/unrar/` are **not** covered by that licence. They are distributed under
+the UnRAR licence in [Libraries/unrar/license.txt](Libraries/unrar/license.txt), which requires that the following
+paragraph be reproduced in the licence or documentation of any software built from them:
+
+> UnRAR source code may be used in any software to handle RAR archives without limitations free of charge, but
+> cannot be used to develop RAR (WinRAR) compatible archiver and to re-create RAR compression algorithm, which is
+> proprietary. Distribution of modified UnRAR source code in separate form or as a part of other software is
+> permitted, provided that full text of this paragraph, starting from "UnRAR source code" words, is included in
+> license, or in documentation if license is not available, and in source code comments of resulting package.
+
+Applications shipping UnrarKit must carry that notice too.
 
 
 
