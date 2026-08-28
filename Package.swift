@@ -60,6 +60,7 @@ let package = Package(
     name: "UnrarKit",
     platforms: [
         .macOS(.v10_13),
+        .iOS(.v12),
         .tvOS(.v12),
     ],
     products: [

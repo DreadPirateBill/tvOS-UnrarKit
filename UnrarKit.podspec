@@ -7,6 +7,7 @@ Pod::Spec.new do |s|
   s.author           = { "Dov Frankel" => "dov@abbey-code.com" }
   s.source           = { :git => "https://github.com/DreadPirateBill/tvOS-UnrarKit.git", :tag => "#{s.version}" }
   s.osx.deployment_target = "10.13"
+  s.ios.deployment_target = "12.0"
   s.tvos.deployment_target = "12.0"
   s.requires_arc = true
   
